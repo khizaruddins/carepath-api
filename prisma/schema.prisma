@@ -1,0 +1,1247 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  PATIENT
+  DOCTOR
+  ADMIN
+  LAB
+}
+
+enum UserStatus {
+  ACTIVE
+  PENDING_VERIFICATION
+  SUSPENDED
+  DEACTIVATED
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+  PREFER_NOT_TO_SAY
+}
+
+enum BloodGroup {
+  A_POSITIVE
+  A_NEGATIVE
+  B_POSITIVE
+  B_NEGATIVE
+  AB_POSITIVE
+  AB_NEGATIVE
+  O_POSITIVE
+  O_NEGATIVE
+  UNKNOWN
+}
+
+enum DocumentCategory {
+  LAB_REPORT
+  PRESCRIPTION
+  CONSULTATION
+  DISCHARGE_SUMMARY
+  IMAGING_REPORT
+  XRAY
+  CT
+  MRI
+  OTHER
+}
+
+enum DocumentProcessingStatus {
+  UPLOADED
+  SCANNING
+  PROCESSING_OCR
+  READY
+  FAILED
+}
+
+enum OcrStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+  CONFIRMED
+}
+
+enum TimelineEventType {
+  DOCUMENT
+  CONSULTATION
+  PRESCRIPTION
+  INVESTIGATION
+  REFERRAL
+  FOLLOW_UP
+  APPOINTMENT
+  LAB_RESULT
+  IMAGING
+  PROCEDURE
+  HOSPITALIZATION
+  DOCUMENT_UPLOADED
+  DOCUMENT_UPDATED
+  REPORT_ADDED
+  PRESCRIPTION_ADDED
+  CONSULTATION_ADDED
+  INVESTIGATION_REQUESTED
+  REFERRAL_CREATED
+  FOLLOW_UP_SCHEDULED
+  CONSENT_GRANTED
+  CONSENT_REVOKED
+  LAB_ORDER_PLACED
+  LAB_REPORT_DELIVERED
+  LAB_REPORT_SHARED
+  OTHER
+}
+
+enum TimelineSourceType {
+  DOCUMENT
+  CONSULTATION
+  PRESCRIPTION
+  INVESTIGATION
+  REFERRAL
+  FOLLOW_UP
+  APPOINTMENT
+  LAB_RESULT
+  OTHER
+}
+
+enum TimelineDatePrecision {
+  EXACT
+  DAY
+  MONTH
+  YEAR
+  UNKNOWN
+}
+
+enum TimelineVisibility {
+  PRIVATE
+  SHARED
+  RESTRICTED
+}
+
+enum AuditAction {
+  LOGIN
+  LOGOUT
+  DOCUMENT_UPLOAD
+  DOCUMENT_VIEW
+  DOCUMENT_DOWNLOAD
+  DOCUMENT_UPDATE
+  DOCUMENT_DELETE
+  PROFILE_VIEW
+  PROFILE_UPDATE
+  PASSWORD_CHANGE
+  SECURITY_EVENT
+  USER_REGISTER
+  REFRESH_TOKEN
+  VIEW_PATIENT
+  CREATE_CONSULTATION
+  UPDATE_CONSULTATION
+  CREATE_PRESCRIPTION
+  CREATE_INVESTIGATION
+  CREATE_REFERRAL
+  CREATE_FOLLOW_UP
+  UPDATE_FOLLOW_UP
+  CREATE_CONSENT
+  APPROVE_CONSENT
+  DECLINE_CONSENT
+  REVOKE_CONSENT
+  EXPIRE_CONSENT
+  CANCEL_CONSENT
+  VIEW_CONSENT
+  DOCTOR_VERIFICATION_SUBMIT
+  DOCTOR_VERIFICATION_REVIEW
+  DOCUMENT_RESTORE_REQUEST
+  DOCUMENT_RESTORE_CANCEL
+  DOCUMENT_RESTORE_APPROVE
+  DOCUMENT_RESTORE_REJECT
+  DOWNLOAD_PROHIBITED_BLOCKED
+  VIEW_TIMELINE
+  VIEW_TIMELINE_EVENT
+  LAB_REGISTER
+  LAB_VERIFICATION_SUBMIT
+  LAB_VERIFICATION_REVIEW
+  LAB_TEST_CREATE
+  LAB_TEST_UPDATE
+  LAB_ORDER_CREATE
+  LAB_ORDER_STATUS_UPDATE
+  LAB_ORDER_CANCEL
+  LAB_SAMPLE_CREATE
+  LAB_SAMPLE_UPDATE
+  LAB_REPORT_CREATE
+  LAB_REPORT_UPDATE
+  LAB_REPORT_FINALIZE
+  LAB_REPORT_AMEND
+  LAB_REPORT_VIEW
+  LAB_DISCOVERY
+  LAB_PRICE_VIEW
+  LAB_SELECTED
+  LAB_CARE_CONNECTION_CREATED
+  LAB_CARE_ACCESS_GRANTED
+  LAB_CARE_ACCESS_DENIED
+  LAB_CARE_ACCESS_EXPIRED
+  LAB_CARE_ACCESS_REVOKED
+  LAB_REPORT_SHARED_WITH_DOCTOR
+}
+
+enum RestoreRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum ConsentStatus {
+  PENDING
+  APPROVED
+  DECLINED
+  REVOKED
+  EXPIRED
+  CANCELLED
+}
+
+enum ConsentPurpose {
+  REVIEW_RECENT_REPORTS
+  FOLLOW_UP_CARE
+  SECOND_OPINION
+  CONSULTATION
+  INVESTIGATION_REVIEW
+  ONGOING_CARE
+  OTHER
+}
+
+enum ConsentResourceType {
+  DOCUMENT
+  TIMELINE
+  CONSULTATION
+  PRESCRIPTION
+  INVESTIGATION
+  REFERRAL
+  FOLLOW_UP
+  PROFILE
+  LAB_ORDER
+  LAB_REPORT
+}
+
+enum ConsentAccessLevel {
+  VIEW
+  DOWNLOAD
+}
+
+enum NotificationType {
+  CONSENT_REQUESTED
+  CONSENT_APPROVED
+  CONSENT_DECLINED
+  CONSENT_REVOKED
+  CONSENT_EXPIRING_SOON
+  CONSENT_EXPIRED
+  ACCESS_REQUESTED
+  ACCESS_GRANTED
+  DOCTOR_ASSIGNED
+  DOCUMENT_UPLOADED
+  CLINICAL_FEEDBACK_ADDED
+  CONSULTATION_CREATED
+  PRESCRIPTION_ISSUED
+  INVESTIGATION_ORDERED
+  FOLLOW_UP_SCHEDULED
+  DOCUMENT_RESTORED
+  DOCTOR_VERIFIED
+  SECURITY_ALERT
+  GENERAL
+  LAB_ORDER_CREATED
+  LAB_ORDER_ACCEPTED
+  LAB_ORDER_CANCELLED
+  LAB_SAMPLE_COLLECTED
+  LAB_SAMPLE_RECEIVED
+  LAB_SAMPLE_REJECTED
+  LAB_REPORT_READY
+  LAB_REPORT_AMENDED
+  LAB_VERIFICATION_SUBMITTED
+  LAB_VERIFIED
+  LAB_REJECTED
+  LAB_CARE_CONNECTION_CREATED
+  LAB_CARE_CONNECTION_EXPIRED
+  LAB_REPORT_DELIVERED
+  LAB_REPORT_SHARED
+}
+
+enum NotificationChannel {
+  IN_APP
+  EMAIL
+  WHATSAPP
+  SMS
+}
+
+enum DoctorVerificationStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+  SUSPENDED
+}
+
+enum FollowUpStatus {
+  UPCOMING
+  COMPLETED
+  MISSED
+  CANCELLED
+}
+
+enum AuditResult {
+  SUCCESS
+  FAILURE
+  DENIED
+}
+
+enum VerificationTokenType {
+  EMAIL_VERIFICATION
+  PHONE_OTP
+}
+
+enum LabVerificationStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+  SUSPENDED
+}
+
+enum LabMemberRole {
+  LAB_ADMIN
+  LAB_TECHNICIAN
+  LAB_PATHOLOGIST
+}
+
+enum LabMemberStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum LabTestCategory {
+  HEMATOLOGY
+  BIOCHEMISTRY
+  PATHOLOGY
+  MICROBIOLOGY
+  IMMUNOLOGY
+  ENDOCRINOLOGY
+  URINALYSIS
+  OTHER
+}
+
+enum LabOrderStatus {
+  PENDING
+  ACCEPTED
+  SAMPLE_PENDING
+  SAMPLE_COLLECTED
+  PROCESSING
+  REPORT_PENDING_REVIEW
+  COMPLETED
+  CANCELLED
+  REJECTED
+}
+
+enum LabCollectionMode {
+  LAB
+  HOME
+}
+
+enum LabSampleStatus {
+  PENDING
+  COLLECTED
+  RECEIVED
+  REJECTED
+  PROCESSING
+  COMPLETED
+}
+
+enum LabReportStatus {
+  DRAFT
+  PROCESSING
+  READY_FOR_REVIEW
+  FINALIZED
+  AMENDED
+  CANCELLED
+}
+
+enum LabCareConnectionStatus {
+  PENDING
+  ACTIVE
+  SAMPLE_COLLECTED
+  TEST_COMPLETED
+  REPORT_READY
+  COMPLETED
+  EXPIRED
+  REVOKED
+  CANCELLED
+}
+
+enum LabCareAccessScope {
+  PATIENT_BASIC_PROFILE
+  INVESTIGATION_REQUEST
+  RELEVANT_PRESCRIPTION
+  RELEVANT_MEDICATION_CONTEXT
+  RELEVANT_PRIOR_REPORT
+  SAMPLE_INFORMATION
+}
+
+model User {
+  id              String     @id @default(uuid())
+  email           String     @unique
+  passwordHash    String
+  role            Role       @default(PATIENT)
+  status          UserStatus @default(PENDING_VERIFICATION)
+  phoneNumber     String?
+  isEmailVerified Boolean    @default(false)
+  isPhoneVerified Boolean    @default(false)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  patientProfile       PatientProfile?
+  doctorProfile        DoctorProfile?
+  adminProfile         AdminProfile?
+  refreshTokens        RefreshToken[]
+  verificationTokens   VerificationToken[]
+  passwordResetTokens  PasswordResetToken[]
+  auditLogs            AuditLog[]            @relation("UserAuditLogs")
+  documents            Document[]            @relation("PatientDocuments")
+  uploadedDocuments    Document[]            @relation("UploadedDocuments")
+  timelineEvents       HealthTimelineEvent[] @relation("PatientTimelineEvents")
+  patientAccessRecords DoctorPatientAccess[] @relation("PatientAccessRecords")
+  doctorAccessRecords  DoctorPatientAccess[] @relation("DoctorAccessRecords")
+  doctorFeedbacks      DoctorFeedback[]
+  receivedReviews      DoctorReview[]        @relation("DoctorReceivedReviews")
+  givenReviews         DoctorReview[]        @relation("PatientGivenReviews")
+
+  patientConsultations   Consultation[]           @relation("PatientConsultations")
+  doctorConsultations    Consultation[]           @relation("DoctorConsultations")
+  patientPrescriptions   Prescription[]           @relation("PatientPrescriptions")
+  doctorPrescriptions    Prescription[]           @relation("DoctorPrescriptions")
+  patientInvestigations  InvestigationRequest[]   @relation("PatientInvestigations")
+  doctorInvestigations   InvestigationRequest[]   @relation("DoctorInvestigations")
+  patientReferrals       Referral[]               @relation("PatientReferrals")
+  doctorReferrals        Referral[]               @relation("DoctorReferrals")
+  patientFollowUps       FollowUp[]               @relation("PatientFollowUps")
+  doctorFollowUps        FollowUp[]               @relation("DoctorFollowUps")
+  patientConsents        Consent[]                @relation("PatientConsents")
+  requesterConsents      Consent[]                @relation("RequesterConsents")
+  notifications          Notification[]           @relation("UserNotifications")
+  patientRestoreRequests DocumentRestoreRequest[] @relation("PatientRestoreRequests")
+  adminRestoreReviews    DocumentRestoreRequest[] @relation("AdminRestoreReviews")
+  labMemberships         LabMembership[]
+  patientLabOrders       LabOrder[]               @relation("PatientLabOrders")
+  prescribedDoctorOrders LabOrder[]               @relation("PrescribedDoctorLabOrders")
+  collectedLabSamples    LabSample[]              @relation("CollectedByLabSamples")
+  verifiedLabReports     LabReport[]              @relation("VerifiedByLabReports")
+  patientLabCareConnections LabCareConnection[]   @relation("PatientLabCareConnections")
+  doctorLabCareConnections  LabCareConnection[]   @relation("DoctorLabCareConnections")
+
+  @@index([email])
+  @@index([role])
+  @@index([status])
+}
+
+model PatientProfile {
+  id                       String      @id @default(uuid())
+  userId                   String      @unique
+  user                     User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fullName                 String
+  dateOfBirth              DateTime?
+  gender                   Gender?
+  mobile                   String?
+  email                    String?
+  city                     String?
+  bloodGroup               BloodGroup?
+  emergencyContactName     String?
+  emergencyContactPhone    String?
+  emergencyContactRelation String?
+
+  // Health Information
+  knownConditions         String[] @default([])
+  allergies               String[] @default([])
+  currentMedications      String[] @default([])
+  pastSurgeries           String[] @default([])
+  importantMedicalHistory String?  @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model DoctorProfile {
+  id                    String    @id @default(uuid())
+  userId                String    @unique
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fullName              String
+  profilePhoto          String?
+  dateOfBirth           DateTime?
+  gender                Gender?
+  mobile                String?
+  specialization        String?
+  subSpecialty          String?
+  qualifications        String?
+  languages             String[]  @default([])
+  yearsOfExperience     Int       @default(0)
+  licenseNumber         String?
+  registrationNumber    String?
+  registrationAuthority String?
+  registrationState     String?
+  registrationCountry   String?   @default("India")
+  clinicName            String?
+  clinicAddress         String?
+  city                  String?
+  consultationMode      String?   @default("IN_PERSON")
+  consultationFee       String?
+  workingHours          String?
+  hospitalAffiliation   String?
+  bio                   String?   @db.Text
+  medicalCertificate    String?
+  education             String?
+
+  // Verification workflow
+  verificationStatus      DoctorVerificationStatus @default(PENDING)
+  verificationNotes       String?                  @db.Text
+  rejectionReason         String?                  @db.Text
+  verificationSubmittedAt DateTime?
+  verifiedAt              DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([verificationStatus])
+}
+
+model AdminProfile {
+  id         String   @id @default(uuid())
+  userId     String   @unique
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fullName   String
+  department String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model Document {
+  id                 String                   @id @default(uuid())
+  patientId          String
+  patient            User                     @relation("PatientDocuments", fields: [patientId], references: [id], onDelete: Cascade)
+  uploadedById       String
+  uploadedBy         User                     @relation("UploadedDocuments", fields: [uploadedById], references: [id], onDelete: Cascade)
+  category           DocumentCategory
+  status             DocumentProcessingStatus @default(UPLOADED)
+  isArchived         Boolean                  @default(false)
+  restoreRequested   Boolean                  @default(false)
+  restoreStatus      RestoreRequestStatus?
+  restoreReason      String?                  @db.Text
+  restoreRequestedAt DateTime?
+  createdAt          DateTime                 @default(now())
+  updatedAt          DateTime                 @updatedAt
+
+  versions        DocumentVersion[]
+  metadata        DocumentMetadata?
+  timelineEvents  HealthTimelineEvent[]
+  feedbacks       DoctorFeedback[]
+  restoreRequests DocumentRestoreRequest[]
+  labReports      LabReport[]
+
+  @@index([patientId])
+  @@index([category])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model DocumentVersion {
+  id               String   @id @default(uuid())
+  documentId       String
+  document         Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  versionNumber    Int      @default(1)
+  storageKey       String
+  bucket           String
+  originalFileName String
+  mimeType         String
+  fileSizeBytes    Int
+  checksumSha256   String
+  isClean          Boolean  @default(true)
+  createdAt        DateTime @default(now())
+
+  @@index([documentId])
+}
+
+model DocumentMetadata {
+  id                 String           @id @default(uuid())
+  documentId         String           @unique
+  document           Document         @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  documentType       DocumentCategory
+  documentDate       DateTime?
+  providerName       String?
+  facility           String?
+  reportTitle        String?
+  patientNotes       String?          @db.Text
+  ocrStatus          OcrStatus        @default(PENDING)
+  rawOcrText         String?          @db.Text
+  extractedData      Json?
+  isPatientConfirmed Boolean          @default(false)
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  @@index([documentId])
+  @@index([ocrStatus])
+}
+
+model HealthTimelineEvent {
+  id        String @id @default(uuid())
+  patientId String
+  patient   User   @relation("PatientTimelineEvents", fields: [patientId], references: [id], onDelete: Cascade)
+
+  eventType     TimelineEventType
+  eventDate     DateTime              @default(now())
+  datePrecision TimelineDatePrecision @default(DAY)
+
+  title       String
+  summary     String? @db.Text
+  description String? @db.Text
+
+  sourceType TimelineSourceType @default(OTHER)
+  sourceId   String?
+
+  documentId String?
+  document   Document? @relation(fields: [documentId], references: [id], onDelete: SetNull)
+
+  providerId   String?
+  providerName String?
+
+  visibility TimelineVisibility @default(SHARED)
+
+  metadata  Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([patientId, sourceType, sourceId])
+  @@index([patientId, eventDate(sort: Desc)])
+  @@index([patientId, eventType, eventDate(sort: Desc)])
+  @@index([patientId, sourceType, sourceId])
+  @@index([providerId, eventDate(sort: Desc)])
+  @@index([eventDate])
+}
+
+model AuditLog {
+  id           String      @id @default(uuid())
+  actorId      String?
+  actor        User?       @relation("UserAuditLogs", fields: [actorId], references: [id], onDelete: SetNull)
+  actorEmail   String?
+  actorRole    String?
+  action       AuditAction
+  resourceType String
+  resourceId   String?
+  result       AuditResult @default(SUCCESS)
+  ipAddress    String?
+  userAgent    String?
+  details      Json?
+  timestamp    DateTime    @default(now())
+
+  @@index([actorId])
+  @@index([action])
+  @@index([resourceType, resourceId])
+  @@index([timestamp])
+}
+
+model DocumentRestoreRequest {
+  id              String               @id @default(uuid())
+  documentId      String
+  document        Document             @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  patientId       String
+  patient         User                 @relation("PatientRestoreRequests", fields: [patientId], references: [id], onDelete: Cascade)
+  status          RestoreRequestStatus @default(PENDING)
+  reason          String?              @db.Text
+  reviewedById    String?
+  reviewedBy      User?                @relation("AdminRestoreReviews", fields: [reviewedById], references: [id], onDelete: SetNull)
+  adminNotes      String?              @db.Text
+  rejectionReason String?              @db.Text
+  createdAt       DateTime             @default(now())
+  reviewedAt      DateTime?
+  updatedAt       DateTime             @updatedAt
+
+  @@index([documentId])
+  @@index([patientId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String
+  expiresAt DateTime
+  isRevoked Boolean  @default(false)
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model VerificationToken {
+  id         String                @id @default(uuid())
+  userId     String
+  user       User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token      String                @unique
+  type       VerificationTokenType @default(EMAIL_VERIFICATION)
+  expiresAt  DateTime
+  consumedAt DateTime?
+  createdAt  DateTime              @default(now())
+
+  @@index([token])
+  @@index([userId])
+}
+
+model PasswordResetToken {
+  id         String    @id @default(uuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token      String    @unique
+  expiresAt  DateTime
+  consumedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([token])
+  @@index([userId])
+}
+
+enum AccessStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  REVOKED
+}
+
+model DoctorPatientAccess {
+  id               String       @id @default(uuid())
+  patientId        String
+  patient          User         @relation("PatientAccessRecords", fields: [patientId], references: [id], onDelete: Cascade)
+  doctorId         String
+  doctor           User         @relation("DoctorAccessRecords", fields: [doctorId], references: [id], onDelete: Cascade)
+  status           AccessStatus @default(PENDING)
+  notes            String?      @db.Text
+  relationshipType String       @default("PRIMARY_PHYSICIAN")
+  accessScope      String[]     @default(["LAB_REPORT", "PRESCRIPTION", "CONSULTATION", "DISCHARGE_SUMMARY", "IMAGING_REPORT", "XRAY", "CT", "MRI", "OTHER"])
+  expiresAt        DateTime?
+  requestedBy      Role         @default(DOCTOR)
+  requestedAt      DateTime     @default(now())
+  respondedAt      DateTime?
+  lastActivityAt   DateTime?
+  updatedAt        DateTime     @updatedAt
+
+  @@unique([patientId, doctorId])
+  @@index([patientId])
+  @@index([doctorId])
+  @@index([status])
+}
+
+model DoctorFeedback {
+  id              String   @id @default(uuid())
+  documentId      String
+  document        Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  doctorId        String
+  doctor          User     @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  notes           String   @db.Text
+  recommendations String?  @db.Text
+  isReviewed      Boolean  @default(true)
+  reviewedAt      DateTime @default(now())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([documentId])
+  @@index([doctorId])
+}
+
+model DoctorReview {
+  id        String   @id @default(uuid())
+  doctorId  String
+  doctor    User     @relation("DoctorReceivedReviews", fields: [doctorId], references: [id], onDelete: Cascade)
+  patientId String
+  patient   User     @relation("PatientGivenReviews", fields: [patientId], references: [id], onDelete: Cascade)
+  rating    Int
+  comment   String?  @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([doctorId])
+  @@index([patientId])
+}
+
+model Consultation {
+  id                   String         @id @default(uuid())
+  patientId            String
+  patient              User           @relation("PatientConsultations", fields: [patientId], references: [id], onDelete: Cascade)
+  doctorId             String
+  doctor               User           @relation("DoctorConsultations", fields: [doctorId], references: [id], onDelete: Cascade)
+  consultationDate     DateTime       @default(now())
+  reasonForVisit       String
+  chiefComplaint       String         @db.Text
+  clinicalNotes        String         @db.Text
+  assessment           String         @db.Text
+  plan                 String         @db.Text
+  followUpDate         DateTime?
+  followUpInstructions String?        @db.Text
+  attachments          String[]       @default([])
+  prescriptions        Prescription[]
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+
+  @@index([patientId])
+  @@index([doctorId])
+  @@index([consultationDate])
+}
+
+model Prescription {
+  id               String             @id @default(uuid())
+  patientId        String
+  patient          User               @relation("PatientPrescriptions", fields: [patientId], references: [id], onDelete: Cascade)
+  doctorId         String
+  doctor           User               @relation("DoctorPrescriptions", fields: [doctorId], references: [id], onDelete: Cascade)
+  consultationId   String?
+  consultation     Consultation?      @relation(fields: [consultationId], references: [id], onDelete: SetNull)
+  prescriptionDate DateTime           @default(now())
+  notes            String?            @db.Text
+  items            PrescriptionItem[]
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  @@index([patientId])
+  @@index([doctorId])
+  @@index([consultationId])
+  @@index([prescriptionDate])
+}
+
+model PrescriptionItem {
+  id              String       @id @default(uuid())
+  prescriptionId  String
+  prescription    Prescription @relation(fields: [prescriptionId], references: [id], onDelete: Cascade)
+  medicineName    String
+  dosage          String
+  frequency       String
+  duration        String
+  instructions    String?
+  additionalNotes String?
+  createdAt       DateTime     @default(now())
+
+  @@index([prescriptionId])
+}
+
+model InvestigationRequest {
+  id                String   @id @default(uuid())
+  patientId         String
+  patient           User     @relation("PatientInvestigations", fields: [patientId], references: [id], onDelete: Cascade)
+  doctorId          String
+  doctor            User     @relation("DoctorInvestigations", fields: [doctorId], references: [id], onDelete: Cascade)
+  investigationName String
+  category          String   @default("LABORATORY")
+  reason            String   @db.Text
+  priority          String   @default("ROUTINE")
+  status            String   @default("PENDING")
+  notes             String?  @db.Text
+  requestedDate     DateTime @default(now())
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  labOrders          LabOrder[]
+  labCareConnections LabCareConnection[]
+
+  @@index([patientId])
+  @@index([doctorId])
+  @@index([status])
+}
+
+model Referral {
+  id               String   @id @default(uuid())
+  patientId        String
+  patient          User     @relation("PatientReferrals", fields: [patientId], references: [id], onDelete: Cascade)
+  doctorId         String
+  doctor           User     @relation("DoctorReferrals", fields: [doctorId], references: [id], onDelete: Cascade)
+  specialty        String
+  referredProvider String?
+  reason           String   @db.Text
+  notes            String?  @db.Text
+  priority         String   @default("ROUTINE")
+  status           String   @default("OPEN")
+  referralDate     DateTime @default(now())
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([patientId])
+  @@index([doctorId])
+  @@index([status])
+}
+
+model FollowUp {
+  id           String         @id @default(uuid())
+  patientId    String
+  patient      User           @relation("PatientFollowUps", fields: [patientId], references: [id], onDelete: Cascade)
+  doctorId     String
+  doctor       User           @relation("DoctorFollowUps", fields: [doctorId], references: [id], onDelete: Cascade)
+  dueDate      DateTime
+  reason       String
+  instructions String?        @db.Text
+  status       FollowUpStatus @default(UPCOMING)
+  completedAt  DateTime?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  @@index([patientId])
+  @@index([doctorId])
+  @@index([status])
+  @@index([dueDate])
+}
+
+model Consent {
+  id                 String         @id @default(uuid())
+  patientId          String
+  patient            User           @relation("PatientConsents", fields: [patientId], references: [id], onDelete: Cascade)
+  requesterId        String
+  requester          User           @relation("RequesterConsents", fields: [requesterId], references: [id], onDelete: Cascade)
+  requesterRole      Role           @default(DOCTOR)
+  purpose            ConsentPurpose @default(REVIEW_RECENT_REPORTS)
+  purposeDescription String         @db.Text
+  status             ConsentStatus  @default(PENDING)
+  declineReason      String?        @db.Text
+  revokeReason       String?        @db.Text
+  requestedAt        DateTime       @default(now())
+  approvedAt         DateTime?
+  declinedAt         DateTime?
+  revokedAt          DateTime?
+  expiresAt          DateTime
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+
+  scopes ConsentScope[]
+
+  @@index([patientId])
+  @@index([requesterId])
+  @@index([status])
+  @@index([expiresAt])
+  @@index([createdAt])
+  @@index([patientId, status])
+  @@index([requesterId, status])
+  @@index([patientId, requesterId, status])
+}
+
+model ConsentScope {
+  id               String              @id @default(uuid())
+  consentId        String
+  consent          Consent             @relation(fields: [consentId], references: [id], onDelete: Cascade)
+  resourceType     ConsentResourceType
+  resourceId       String?
+  resourceCategory String?
+  accessLevel      ConsentAccessLevel  @default(VIEW)
+  createdAt        DateTime            @default(now())
+
+  @@index([consentId])
+  @@index([resourceType])
+  @@index([resourceId])
+}
+
+model Notification {
+  id        String              @id @default(uuid())
+  userId    String
+  user      User                @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType
+  title     String
+  message   String              @db.Text
+  channel   NotificationChannel @default(IN_APP)
+  isRead    Boolean             @default(false)
+  readAt    DateTime?
+  metadata  Json?
+  createdAt DateTime            @default(now())
+
+  @@index([userId])
+  @@index([isRead])
+  @@index([type])
+  @@index([createdAt])
+}
+
+model LabOrganization {
+  id                   String                @id @default(uuid())
+  name                 String
+  legalName            String?
+  licenseNumber        String                @unique
+  accreditationDetails Json?
+  contactEmail         String
+  contactPhone         String
+  address              String?               @db.Text
+  city                 String?
+  state                String?
+  pincode              String?
+  latitude             Float?
+  longitude            Float?
+  operatingHours       Json?
+  supportedSampleTypes String[]              @default([])
+  verificationStatus   LabVerificationStatus @default(PENDING)
+  verificationNotes    String?               @db.Text
+  verifiedAt           DateTime?
+  verifiedBy           String?
+  isActive             Boolean               @default(true)
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+
+  memberships  LabMembership[]
+  locations    LabLocation[]
+  catalogTests LabTest[]
+  orders       LabOrder[]
+  connections  LabCareConnection[]   @relation("LabCareConnections")
+
+  @@index([verificationStatus])
+  @@index([city])
+  @@index([isActive])
+}
+
+model LabMembership {
+  id        String          @id @default(uuid())
+  labId     String
+  lab       LabOrganization @relation(fields: [labId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      LabMemberRole   @default(LAB_ADMIN)
+  status    LabMemberStatus @default(ACTIVE)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  @@unique([labId, userId])
+  @@index([labId])
+  @@index([userId])
+  @@index([role])
+}
+
+model CanonicalTest {
+  id                    String          @id @default(uuid())
+  code                  String          @unique
+  name                  String
+  category              LabTestCategory
+  description           String?         @db.Text
+  sampleTypes           String[]        @default([])
+  defaultTurnaroundTime String?
+  synonyms              String[]        @default([])
+  isActive              Boolean         @default(true)
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+
+  labTests  LabTest[]
+  labOrders LabOrder[]
+
+  @@index([code])
+  @@index([name])
+  @@index([category])
+  @@index([isActive])
+}
+
+model LabLocation {
+  id                      String          @id @default(uuid())
+  labId                   String
+  lab                     LabOrganization @relation(fields: [labId], references: [id], onDelete: Cascade)
+  name                    String
+  addressLine1            String
+  addressLine2            String?
+  area                    String?
+  city                    String
+  state                   String
+  pincode                 String
+  latitude                Float?
+  longitude               Float?
+  phone                   String?
+  operatingHours          Json?
+  homeCollectionAvailable Boolean         @default(false)
+  homeCollectionFee       Decimal?        @db.Decimal(10, 2)
+  isActive                Boolean         @default(true)
+  createdAt               DateTime        @default(now())
+  updatedAt               DateTime        @updatedAt
+
+  labOrders LabOrder[]
+
+  @@index([labId])
+  @@index([city])
+  @@index([pincode])
+  @@index([isActive])
+}
+
+model LabTest {
+  id               String          @id @default(uuid())
+  labId            String
+  lab              LabOrganization @relation(fields: [labId], references: [id], onDelete: Cascade)
+  canonicalTestId  String?
+  canonicalTest    CanonicalTest?  @relation(fields: [canonicalTestId], references: [id], onDelete: SetNull)
+  testCode         String
+  name             String
+  category         LabTestCategory
+  description      String?         @db.Text
+  sampleTypes      String[]        @default([])
+  turnaroundTime   String?
+  price            Decimal         @db.Decimal(10, 2)
+  preparationNotes String?         @db.Text
+  isHomeCollection Boolean         @default(false)
+  isActive         Boolean         @default(true)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  orderItems LabOrderItem[]
+
+  @@unique([labId, testCode])
+  @@index([labId])
+  @@index([canonicalTestId])
+  @@index([category])
+  @@index([isActive])
+}
+
+model LabOrder {
+  id                     String                @id @default(uuid())
+  orderNumber            String                @unique
+  patientId              String
+  patient                User                  @relation("PatientLabOrders", fields: [patientId], references: [id], onDelete: Cascade)
+  prescribedDoctorId     String?
+  prescribedDoctor       User?                 @relation("PrescribedDoctorLabOrders", fields: [prescribedDoctorId], references: [id], onDelete: SetNull)
+  investigationRequestId String?
+  investigationRequest   InvestigationRequest? @relation(fields: [investigationRequestId], references: [id], onDelete: SetNull)
+  labId                  String
+  lab                    LabOrganization       @relation(fields: [labId], references: [id], onDelete: Cascade)
+  labLocationId          String?
+  labLocation            LabLocation?          @relation(fields: [labLocationId], references: [id], onDelete: SetNull)
+  canonicalTestId        String?
+  canonicalTest          CanonicalTest?        @relation(fields: [canonicalTestId], references: [id], onDelete: SetNull)
+  status                 LabOrderStatus        @default(PENDING)
+  collectionMode         LabCollectionMode     @default(LAB)
+  collectionAddress      String?               @db.Text
+  scheduledDate          DateTime?
+  instructions           String?               @db.Text
+  priority               String                @default("ROUTINE")
+  notes                  String?               @db.Text
+  basePrice              Decimal?              @db.Decimal(10, 2)
+  homeCollectionFee      Decimal?              @db.Decimal(10, 2)
+  discount               Decimal?              @db.Decimal(10, 2)
+  totalPrice             Decimal?              @db.Decimal(10, 2)
+  currency               String                @default("INR")
+  cancelledReason        String?               @db.Text
+  completedAt            DateTime?
+  createdAt              DateTime              @default(now())
+  updatedAt              DateTime              @updatedAt
+
+  items          LabOrderItem[]
+  samples        LabSample[]
+  reports        LabReport[]
+  careConnection LabCareConnection?
+
+  @@index([orderNumber])
+  @@index([patientId])
+  @@index([prescribedDoctorId])
+  @@index([labId])
+  @@index([labLocationId])
+  @@index([canonicalTestId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model LabOrderItem {
+  id        String   @id @default(uuid())
+  orderId   String
+  order     LabOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  testId    String?
+  test      LabTest? @relation(fields: [testId], references: [id], onDelete: SetNull)
+  testName  String
+  testCode  String
+  price     Decimal  @db.Decimal(10, 2)
+  notes     String?  @db.Text
+  createdAt DateTime @default(now())
+
+  @@index([orderId])
+  @@index([testId])
+}
+
+model LabSample {
+  id               String          @id @default(uuid())
+  orderId          String
+  order            LabOrder        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  sampleType       String
+  sampleIdentifier String
+  barcode          String?
+  status           LabSampleStatus @default(PENDING)
+  collectedAt      DateTime?
+  collectedById    String?
+  collectedBy      User?           @relation("CollectedByLabSamples", fields: [collectedById], references: [id], onDelete: SetNull)
+  receivedAt       DateTime?
+  rejectedAt       DateTime?
+  rejectionReason  String?         @db.Text
+  notes            String?         @db.Text
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  @@index([orderId])
+  @@index([sampleIdentifier])
+  @@index([status])
+}
+
+model LabReport {
+  id               String          @id @default(uuid())
+  reportNumber     String          @unique
+  orderId          String
+  order            LabOrder        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  documentId       String?
+  document         Document?       @relation(fields: [documentId], references: [id], onDelete: SetNull)
+  status           LabReportStatus @default(DRAFT)
+  testSummary      String?         @db.Text
+  clinicalNotes    String?         @db.Text
+  verifiedById     String?
+  verifiedBy       User?           @relation("VerifiedByLabReports", fields: [verifiedById], references: [id], onDelete: SetNull)
+  verifiedAt       DateTime?
+  finalizedAt      DateTime?
+  isAmended        Boolean         @default(false)
+  amendedReason    String?         @db.Text
+  previousReportId String?
+  previousReport   LabReport?      @relation("ReportAmendments", fields: [previousReportId], references: [id], onDelete: SetNull)
+  amendedReports   LabReport[]     @relation("ReportAmendments")
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  @@index([reportNumber])
+  @@index([orderId])
+  @@index([documentId])
+  @@index([status])
+  @@index([finalizedAt])
+}
+
+model LabCareConnection {
+  id                     String                  @id @default(uuid())
+  patientId              String
+  patient                User                    @relation("PatientLabCareConnections", fields: [patientId], references: [id], onDelete: Cascade)
+  doctorId               String?
+  doctor                 User?                   @relation("DoctorLabCareConnections", fields: [doctorId], references: [id], onDelete: SetNull)
+  labId                  String
+  lab                    LabOrganization         @relation("LabCareConnections", fields: [labId], references: [id], onDelete: Cascade)
+  investigationRequestId String?
+  investigationRequest   InvestigationRequest?   @relation(fields: [investigationRequestId], references: [id], onDelete: SetNull)
+  labOrderId             String                  @unique
+  labOrder               LabOrder                @relation(fields: [labOrderId], references: [id], onDelete: Cascade)
+  status                 LabCareConnectionStatus @default(ACTIVE)
+  purpose                String                  @default("INVESTIGATION_FULFILLMENT")
+  scopes                 LabCareAccessScope[]    @default([PATIENT_BASIC_PROFILE, INVESTIGATION_REQUEST, SAMPLE_INFORMATION])
+  accessGrantedAt        DateTime                @default(now())
+  expiresAt              DateTime
+  revokedAt              DateTime?
+  revocationReason       String?                 @db.Text
+  sampleCollectedAt      DateTime?
+  testCompletedAt        DateTime?
+  reportFinalizedAt      DateTime?
+  reportDeliveredAt      DateTime?
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+
+  @@index([patientId])
+  @@index([doctorId])
+  @@index([labId])
+  @@index([status])
+  @@index([expiresAt])
+}
+
