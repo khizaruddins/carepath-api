@@ -184,6 +184,14 @@ enum AuditAction {
   LAB_CARE_ACCESS_EXPIRED
   LAB_CARE_ACCESS_REVOKED
   LAB_REPORT_SHARED_WITH_DOCTOR
+  DOCTOR_SEARCH
+  DOCTOR_PROFILE_VIEW
+  DOCTOR_CONNECT
+  DOCTOR_RECONNECT
+  DOCTOR_DISCONNECT
+  DOCTOR_BLOCK
+  DOCTOR_UNBLOCK
+  DOCTOR_RELATIONSHIP_VIEW
 }
 
 enum RestoreRequestStatus {
@@ -265,6 +273,9 @@ enum NotificationType {
   LAB_CARE_CONNECTION_EXPIRED
   LAB_REPORT_DELIVERED
   LAB_REPORT_SHARED
+  DOCTOR_CONNECTED
+  DOCTOR_DISCONNECTED
+  DOCTOR_RECONNECTED
 }
 
 enum NotificationChannel {
@@ -385,6 +396,29 @@ enum LabCareAccessScope {
   SAMPLE_INFORMATION
 }
 
+enum RelationshipStatus {
+  ACTIVE
+  INACTIVE
+  BLOCKED
+}
+
+enum RelationshipEventType {
+  CONNECTED
+  DISCONNECTED
+  RECONNECTED
+  BLOCKED
+  UNBLOCKED
+}
+
+enum ConnectionSource {
+  SEARCH
+  DOCTOR_INVITE
+  CONSULTATION
+  REFERRAL
+  LAB_FOLLOW_UP
+  OTHER
+}
+
 model User {
   id              String     @id @default(uuid())
   email           String     @unique
@@ -435,6 +469,11 @@ model User {
   verifiedLabReports     LabReport[]              @relation("VerifiedByLabReports")
   patientLabCareConnections LabCareConnection[]   @relation("PatientLabCareConnections")
   doctorLabCareConnections  LabCareConnection[]   @relation("DoctorLabCareConnections")
+  patientRelationships      PatientDoctorRelationship[] @relation("PatientDoctorRelationshipsAsPatient")
+  doctorRelationships       PatientDoctorRelationship[] @relation("PatientDoctorRelationshipsAsDoctor")
+  doctorPracticeLocations   DoctorPracticeLocation[]    @relation("DoctorPracticeLocations")
+  patientSearchHistories    DoctorSearchHistory[]       @relation("PatientDoctorSearchHistories")
+  doctorSearchHistories     DoctorSearchHistory[]       @relation("DoctorSearchHistoriesDoctor")
 
   @@index([email])
   @@index([role])
@@ -491,6 +530,8 @@ model DoctorProfile {
   clinicName            String?
   clinicAddress         String?
   city                  String?
+  latitude              Float?
+  longitude             Float?
   consultationMode      String?   @default("IN_PERSON")
   consultationFee       String?
   workingHours          String?
@@ -1243,5 +1284,88 @@ model LabCareConnection {
   @@index([labId])
   @@index([status])
   @@index([expiresAt])
+}
+
+model PatientDoctorRelationship {
+  id                 String             @id @default(uuid())
+  patientId          String
+  patient            User               @relation("PatientDoctorRelationshipsAsPatient", fields: [patientId], references: [id], onDelete: Cascade)
+  doctorId           String
+  doctor             User               @relation("PatientDoctorRelationshipsAsDoctor", fields: [doctorId], references: [id], onDelete: Cascade)
+  status             RelationshipStatus @default(ACTIVE)
+  connectedAt        DateTime           @default(now())
+  disconnectedAt     DateTime?
+  blockedAt          DateTime?
+  lastInteractionAt  DateTime           @default(now())
+  lastConsultationAt DateTime?
+  consultationCount  Int                @default(0)
+  connectionSource   ConnectionSource   @default(SEARCH)
+  notes              String?            @db.Text
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  events             PatientDoctorRelationshipEvent[]
+
+  @@unique([patientId, doctorId])
+  @@index([patientId])
+  @@index([doctorId])
+  @@index([status])
+  @@index([lastInteractionAt])
+  @@index([connectedAt])
+}
+
+model PatientDoctorRelationshipEvent {
+  id             String                    @id @default(uuid())
+  relationshipId String
+  relationship   PatientDoctorRelationship @relation(fields: [relationshipId], references: [id], onDelete: Cascade)
+  eventType      RelationshipEventType
+  actorId        String
+  reason         String?                   @db.Text
+  metadata       Json?
+  createdAt      DateTime                  @default(now())
+
+  @@index([relationshipId])
+  @@index([eventType])
+  @@index([createdAt])
+}
+
+model DoctorPracticeLocation {
+  id           String   @id @default(uuid())
+  doctorId     String
+  doctor       User     @relation("DoctorPracticeLocations", fields: [doctorId], references: [id], onDelete: Cascade)
+  practiceName String
+  addressLine1 String
+  addressLine2 String?
+  area         String?
+  city         String
+  state        String?
+  pincode      String?
+  latitude     Float?
+  longitude    Float?
+  phone        String?
+  isPrimary    Boolean  @default(false)
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([doctorId])
+  @@index([city])
+  @@index([area])
+  @@index([pincode])
+  @@index([active])
+}
+
+model DoctorSearchHistory {
+  id          String   @id @default(uuid())
+  patientId   String
+  patient     User     @relation("PatientDoctorSearchHistories", fields: [patientId], references: [id], onDelete: Cascade)
+  doctorId    String?
+  doctor      User?    @relation("DoctorSearchHistoriesDoctor", fields: [doctorId], references: [id], onDelete: Cascade)
+  searchQuery String?
+  searchedAt  DateTime @default(now())
+
+  @@index([patientId])
+  @@index([doctorId])
+  @@index([searchedAt])
 }
 

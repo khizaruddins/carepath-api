@@ -3,10 +3,12 @@ import {
   Get,
   Post,
   Patch,
+  Delete,
   Param,
   Body,
   Query,
   UseGuards,
+  Req,
   ParseUUIDPipe,
 } from '@nestjs/common';
 import {
@@ -17,7 +19,18 @@ import {
   ApiParam,
   ApiQuery,
 } from '@nestjs/swagger';
+import { Request } from 'express';
 import { DoctorService } from './doctor.service';
+import { DoctorDiscoveryService } from './doctor-discovery.service';
+import { DoctorRelationshipService } from './doctor-relationship.service';
+import { DiscoverDoctorsDto } from './dto/discover-doctors.dto';
+import { ConnectDoctorDto } from './dto/connect-doctor.dto';
+import { DisconnectDoctorDto } from './dto/disconnect-doctor.dto';
+import { BlockDoctorDto } from './dto/block-doctor.dto';
+import {
+  CreateDoctorPracticeLocationDto,
+  UpdateDoctorPracticeLocationDto,
+} from './dto/doctor-practice-location.dto';
 import { RequestAccessDto } from './dto/request-access.dto';
 import { RespondAccessDto } from './dto/respond-access.dto';
 import { DoctorFeedbackDto } from './dto/doctor-feedback.dto';
@@ -35,14 +48,18 @@ import { UserStatusGuard } from '../common/guards/user-status.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { CurrentUser, AuthenticatedUser } from '../common/decorators/current-user.decorator';
-import { DoctorVerificationStatus, Role } from '@prisma/client';
+import { DoctorVerificationStatus, Role, RelationshipStatus } from '@prisma/client';
 
-@ApiTags('Doctor & Clinical Journey Platform (M2)')
+@ApiTags('Doctor & Clinical Journey Platform (M2, M6)')
 @ApiBearerAuth('JWT-auth')
 @UseGuards(JwtAuthGuard, UserStatusGuard, RolesGuard)
 @Controller()
 export class DoctorController {
-  constructor(private readonly doctorService: DoctorService) {}
+  constructor(
+    private readonly doctorService: DoctorService,
+    private readonly doctorDiscoveryService: DoctorDiscoveryService,
+    private readonly doctorRelationshipService: DoctorRelationshipService,
+  ) {}
 
   // -------------------------------------------------------------
   // Doctor Clinical Dashboard
@@ -451,14 +468,46 @@ export class DoctorController {
   // Public Doctor Directory & Showcase Reviews
   // -------------------------------------------------------------
 
+  // -------------------------------------------------------------
+  // M6: Verified Doctor Discovery & Search
+  // -------------------------------------------------------------
+
   @Get('doctors')
-  @ApiOperation({ summary: 'List verified doctors directory' })
-  async listDoctors() {
-    return this.doctorService.listDoctors();
+  @ApiOperation({ summary: 'Search and discover verified doctors with multi-factor filters and ranking' })
+  @ApiResponse({ status: 200, description: 'List of matching verified doctors with practice locations' })
+  async discoverDoctors(
+    @Query() dto: DiscoverDoctorsDto,
+    @CurrentUser() user: AuthenticatedUser,
+    @Req() req: Request,
+  ) {
+    return this.doctorDiscoveryService.searchDoctors(
+      dto,
+      user,
+      req.ip,
+      req.headers['user-agent'],
+    );
   }
 
   @Get('doctors/:id')
-  @ApiOperation({ summary: 'Get doctor showcase profile with reviews and ratings' })
+  @ApiOperation({ summary: 'Get sanitized public doctor profile with practice locations and relationship status' })
+  @ApiParam({ name: 'id', description: 'Doctor user ID' })
+  @ApiResponse({ status: 200, description: 'Public doctor profile' })
+  @ApiResponse({ status: 404, description: 'Doctor not found or not verified' })
+  async getDoctorPublicProfile(
+    @Param('id', ParseUUIDPipe) doctorId: string,
+    @CurrentUser() user: AuthenticatedUser,
+    @Req() req: Request,
+  ) {
+    return this.doctorDiscoveryService.getDoctorPublicProfile(
+      doctorId,
+      user,
+      req.ip,
+      req.headers['user-agent'],
+    );
+  }
+
+  @Get('doctors/:id/showcase')
+  @ApiOperation({ summary: 'Get legacy doctor showcase profile with reviews and ratings' })
   @ApiParam({ name: 'id', description: 'Doctor user ID' })
   async getDoctorShowcase(@Param('id', ParseUUIDPipe) doctorId: string) {
     return this.doctorService.getDoctorShowcase(doctorId);
@@ -475,4 +524,228 @@ export class DoctorController {
   ) {
     return this.doctorService.addDoctorReview(patient.id, doctorId, dto);
   }
+
+  // -------------------------------------------------------------
+  // M6: Multi-Practice Locations Management (Doctor)
+  // -------------------------------------------------------------
+
+  @Post('doctor/locations')
+  @Roles(Role.DOCTOR)
+  @ApiOperation({ summary: 'Doctor adds a new clinical practice location' })
+  @ApiResponse({ status: 201, description: 'Practice location added' })
+  async createPracticeLocation(
+    @CurrentUser() doctor: AuthenticatedUser,
+    @Body() dto: CreateDoctorPracticeLocationDto,
+  ) {
+    return this.doctorDiscoveryService.createPracticeLocation(doctor.id, dto);
+  }
+
+  @Get('doctor/locations')
+  @Roles(Role.DOCTOR)
+  @ApiOperation({ summary: 'Doctor lists all their practice locations' })
+  async getDoctorPracticeLocations(@CurrentUser() doctor: AuthenticatedUser) {
+    return this.doctorDiscoveryService.getDoctorPracticeLocations(doctor.id);
+  }
+
+  @Patch('doctor/locations/:locationId')
+  @Roles(Role.DOCTOR)
+  @ApiOperation({ summary: 'Doctor updates a practice location' })
+  @ApiParam({ name: 'locationId', description: 'Practice location ID' })
+  async updatePracticeLocation(
+    @CurrentUser() doctor: AuthenticatedUser,
+    @Param('locationId', ParseUUIDPipe) locationId: string,
+    @Body() dto: UpdateDoctorPracticeLocationDto,
+  ) {
+    return this.doctorDiscoveryService.updatePracticeLocation(
+      doctor.id,
+      locationId,
+      dto,
+    );
+  }
+
+  @Delete('doctor/locations/:locationId')
+  @Roles(Role.DOCTOR)
+  @ApiOperation({ summary: 'Doctor removes a practice location' })
+  @ApiParam({ name: 'locationId', description: 'Practice location ID' })
+  async deletePracticeLocation(
+    @CurrentUser() doctor: AuthenticatedUser,
+    @Param('locationId', ParseUUIDPipe) locationId: string,
+  ) {
+    return this.doctorDiscoveryService.deletePracticeLocation(
+      doctor.id,
+      locationId,
+    );
+  }
+
+  // -------------------------------------------------------------
+  // M6: Patient-Doctor Durable Relationship Lifecycle
+  // -------------------------------------------------------------
+
+  @Post('doctors/:id/connect')
+  @Roles(Role.PATIENT)
+  @ApiOperation({ summary: 'Patient connects to a verified doctor' })
+  @ApiParam({ name: 'id', description: 'Doctor user ID' })
+  @ApiResponse({ status: 201, description: 'Relationship created or made active' })
+  async connectDoctor(
+    @CurrentUser() patient: AuthenticatedUser,
+    @Param('id', ParseUUIDPipe) doctorId: string,
+    @Body() dto: ConnectDoctorDto,
+    @Req() req: Request,
+  ) {
+    return this.doctorRelationshipService.connectDoctor(
+      patient.id,
+      doctorId,
+      dto,
+      req.ip,
+      req.headers['user-agent'],
+    );
+  }
+
+  @Post('doctors/:id/reconnect')
+  @Roles(Role.PATIENT)
+  @ApiOperation({ summary: 'Patient reconnects with a previously disconnected doctor' })
+  @ApiParam({ name: 'id', description: 'Doctor user ID' })
+  async reconnectDoctor(
+    @CurrentUser() patient: AuthenticatedUser,
+    @Param('id', ParseUUIDPipe) doctorId: string,
+    @Req() req: Request,
+  ) {
+    return this.doctorRelationshipService.reconnectDoctor(
+      patient.id,
+      doctorId,
+      req.ip,
+      req.headers['user-agent'],
+    );
+  }
+
+  @Post('doctors/:id/disconnect')
+  @Roles(Role.PATIENT)
+  @ApiOperation({ summary: 'Patient ends relationship with a doctor (preserves historical clinical records)' })
+  @ApiParam({ name: 'id', description: 'Doctor user ID' })
+  async disconnectDoctor(
+    @CurrentUser() patient: AuthenticatedUser,
+    @Param('id', ParseUUIDPipe) doctorId: string,
+    @Body() dto: DisconnectDoctorDto,
+    @Req() req: Request,
+  ) {
+    return this.doctorRelationshipService.disconnectDoctor(
+      patient.id,
+      doctorId,
+      dto,
+      req.ip,
+      req.headers['user-agent'],
+    );
+  }
+
+  @Post('doctors/:id/block')
+  @Roles(Role.PATIENT)
+  @ApiOperation({ summary: 'Patient blocks doctor relationship' })
+  @ApiParam({ name: 'id', description: 'Doctor user ID' })
+  async blockDoctor(
+    @CurrentUser() patient: AuthenticatedUser,
+    @Param('id', ParseUUIDPipe) doctorId: string,
+    @Body() dto: BlockDoctorDto,
+    @Req() req: Request,
+  ) {
+    return this.doctorRelationshipService.blockDoctor(
+      patient.id,
+      doctorId,
+      dto,
+      req.ip,
+      req.headers['user-agent'],
+    );
+  }
+
+  @Post('doctors/:id/unblock')
+  @Roles(Role.PATIENT)
+  @ApiOperation({ summary: 'Patient unblocks doctor relationship' })
+  @ApiParam({ name: 'id', description: 'Doctor user ID' })
+  async unblockDoctor(
+    @CurrentUser() patient: AuthenticatedUser,
+    @Param('id', ParseUUIDPipe) doctorId: string,
+    @Req() req: Request,
+  ) {
+    return this.doctorRelationshipService.unblockDoctor(
+      patient.id,
+      doctorId,
+      req.ip,
+      req.headers['user-agent'],
+    );
+  }
+
+  // -------------------------------------------------------------
+  // M6: Patient Relationship Queries & History
+  // -------------------------------------------------------------
+
+  @Get('patients/me/doctors')
+  @Roles(Role.PATIENT)
+  @ApiOperation({ summary: 'Patient lists currently connected doctors' })
+  @ApiQuery({ name: 'status', enum: RelationshipStatus, required: false })
+  async getPatientDoctors(
+    @CurrentUser() patient: AuthenticatedUser,
+    @Query('status') status?: RelationshipStatus,
+    @Req() req?: Request,
+  ) {
+    return this.doctorRelationshipService.getPatientDoctors(
+      patient.id,
+      status,
+      req?.ip,
+      req?.headers['user-agent'],
+    );
+  }
+
+  @Get('patients/me/doctors/history')
+  @Roles(Role.PATIENT)
+  @ApiOperation({ summary: 'Patient views relationship history events across all connected/disconnected doctors' })
+  async getPatientRelationshipHistory(@CurrentUser() patient: AuthenticatedUser) {
+    return this.doctorRelationshipService.getPatientRelationshipHistory(patient.id);
+  }
+
+  @Get('patients/me/doctors/previously-consulted')
+  @Roles(Role.PATIENT)
+  @ApiOperation({ summary: 'Patient lists doctors with whom they had clinical consultations (consultation history)' })
+  async getPreviouslyConsultedDoctors(@CurrentUser() patient: AuthenticatedUser) {
+    return this.doctorRelationshipService.getPreviouslyConsultedDoctors(patient.id);
+  }
+
+  @Get('patients/me/doctor-search-history')
+  @Roles(Role.PATIENT)
+  @ApiOperation({ summary: 'Patient views recent doctor search and profile view history' })
+  async getPatientSearchHistory(@CurrentUser() patient: AuthenticatedUser) {
+    return this.doctorRelationshipService.getPatientSearchHistory(patient.id);
+  }
+
+  @Delete('patients/me/doctor-search-history/:id')
+  @Roles(Role.PATIENT)
+  @ApiOperation({ summary: 'Patient deletes a single doctor search history item' })
+  @ApiParam({ name: 'id', description: 'Search history ID' })
+  async deleteSearchHistoryItem(
+    @CurrentUser() patient: AuthenticatedUser,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.doctorRelationshipService.clearPatientSearchHistory(patient.id, id);
+  }
+
+  @Delete('patients/me/doctor-search-history')
+  @Roles(Role.PATIENT)
+  @ApiOperation({ summary: 'Patient clears all doctor search history' })
+  async clearAllSearchHistory(@CurrentUser() patient: AuthenticatedUser) {
+    return this.doctorRelationshipService.clearPatientSearchHistory(patient.id);
+  }
+
+  // -------------------------------------------------------------
+  // M6: Doctor Patient Roster
+  // -------------------------------------------------------------
+
+  @Get('doctors/me/patients')
+  @Roles(Role.DOCTOR)
+  @ApiOperation({ summary: 'Doctor lists connected patients from the relationship network' })
+  @ApiQuery({ name: 'search', required: false, description: 'Search patient by name, email, or city' })
+  async getDoctorConnectedPatients(
+    @CurrentUser() doctor: AuthenticatedUser,
+    @Query('search') search?: string,
+  ) {
+    return this.doctorRelationshipService.getDoctorConnectedPatients(doctor.id, search);
+  }
 }
+
